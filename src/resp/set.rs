@@ -71,7 +71,7 @@ mod tests {
     #[test]
     fn test_set_encode() {
         let frame: RespFrame = RespSet::new([
-            RespArray::new([1234.into(), true.into()]).into(),
+            RespArray::new(Some(vec![1234.into(), true.into()])).into(),
             BulkString::new("world".to_string()).into(),
         ])
         .into();

@@ -19,7 +19,7 @@ const CRLF: &[u8] = b"\r\n";
 const CRLF_LEN: usize = CRLF.len();
 
 pub use self::{
-    array::{RespArray, RespNullArray},
+    array::RespArray,
     bulk_string::{BulkString, RespNullBulkString},
     frame::RespFrame,
     map::RespMap,
@@ -116,6 +116,18 @@ fn parse_length(buf: &[u8], prefix: &str) -> Result<(usize, usize), RespError> {
     let end = extract_simple_frame_data(buf, prefix)?;
     let s = String::from_utf8_lossy(&buf[prefix.len()..end]);
     Ok((end, s.parse()?))
+}
+
+fn check_null_array(buf: &[u8]) -> Result<bool, RespError> {
+    if buf.len() < 3 {
+        return Err(RespError::NotComplete);
+    }
+
+    if !buf.starts_with(b"*-1\r\n") {
+        return Ok(false);
+    }
+
+    Ok(true)
 }
 
 fn calc_total_length(buf: &[u8], end: usize, len: usize, prefix: &str) -> Result<usize, RespError> {

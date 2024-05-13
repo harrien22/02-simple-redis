@@ -31,7 +31,7 @@ impl CommandExecutor for HGetAll {
 
                 RespArray::new(ret).into()
             }
-            None => RespArray::new([]).into(),
+            None => RespArray::new(None).into(),
         }
     }
 }
@@ -179,12 +179,12 @@ mod tests {
         };
         let result = cmd.execute(&backend);
 
-        let expected = RespArray::new([
+        let expected = RespArray::new(Some(vec![
             BulkString::from("hello").into(),
             BulkString::from("world").into(),
             BulkString::from("hello1").into(),
             BulkString::from("world1").into(),
-        ]);
+        ]));
         assert_eq!(result, expected.into());
         Ok(())
     }

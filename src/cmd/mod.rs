@@ -90,19 +90,37 @@ impl TryFrom<RespFrame> for Command {
 impl TryFrom<RespArray> for Command {
     type Error = CommandError;
     fn try_from(v: RespArray) -> Result<Self, Self::Error> {
-        match v.first() {
-            Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
-                b"get" => Ok(Get::try_from(v)?.into()),
-                b"set" => Ok(Set::try_from(v)?.into()),
-                b"hget" => Ok(HGet::try_from(v)?.into()),
-                b"hset" => Ok(HSet::try_from(v)?.into()),
-                b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
-                _ => Ok(Unrecognized.into()),
+        match &v.0 {
+            Some(frames) => match frames.first() {
+                Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
+                    b"get" => Ok(Get::try_from(v)?.into()),
+                    b"set" => Ok(Set::try_from(v)?.into()),
+                    b"hget" => Ok(HGet::try_from(v)?.into()),
+                    b"hset" => Ok(HSet::try_from(v)?.into()),
+                    b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
+                    _ => Ok(Unrecognized.into()),
+                },
+                _ => Err(CommandError::InvalidCommand(
+                    "Command must have a BulkString as the first argument".to_string(),
+                )),
             },
-            _ => Err(CommandError::InvalidCommand(
+            None => Err(CommandError::InvalidCommand(
                 "Command must have a BulkString as the first argument".to_string(),
             )),
         }
+        // match v.first() {
+        //     Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
+        //         b"get" => Ok(Get::try_from(v)?.into()),
+        //         b"set" => Ok(Set::try_from(v)?.into()),
+        //         b"hget" => Ok(HGet::try_from(v)?.into()),
+        //         b"hset" => Ok(HSet::try_from(v)?.into()),
+        //         b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
+        //         _ => Ok(Unrecognized.into()),
+        //     },
+        //     _ => Err(CommandError::InvalidCommand(
+        //         "Command must have a BulkString as the first argument".to_string(),
+        //     )),
+        // }
     }
 }
 
@@ -117,6 +135,13 @@ fn validate_command(
     names: &[&'static str],
     n_args: usize,
 ) -> Result<(), CommandError> {
+    if value.is_none() {
+        return Err(CommandError::InvalidCommand(
+            "Command must have a BulkString as the first argument".to_string(),
+        ));
+    }
+
+    let value = value.as_ref().unwrap();
     if value.len() != n_args + names.len() {
         return Err(CommandError::InvalidArgument(format!(
             "{} command must have exactly {} argument",
@@ -147,7 +172,14 @@ fn validate_command(
 }
 
 fn extract_args(value: RespArray, start: usize) -> Result<Vec<RespFrame>, CommandError> {
-    Ok(value.0.into_iter().skip(start).collect::<Vec<RespFrame>>())
+    match value.0 {
+        Some(frames) => Ok(frames.into_iter().skip(start).collect::<Vec<RespFrame>>()),
+        None => Err(CommandError::InvalidCommand(
+            "Command must have a BulkString as the first argument".to_string(),
+        )),
+    }
+
+    // Ok(value.0.into_iter().skip(start).collect::<Vec<RespFrame>>())
 }
 
 #[cfg(test)]
