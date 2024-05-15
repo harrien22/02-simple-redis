@@ -28,7 +28,7 @@ impl TryFrom<RespArray> for Get {
         let mut args = extract_args(value, 1)?.into_iter();
         match args.next() {
             Some(RespFrame::BulkString(key)) => Ok(Get {
-                key: String::from_utf8(key.0)?,
+                key: String::from_utf8(key.0.expect("Invalid key"))?,
             }),
             _ => Err(CommandError::InvalidArgument("Invalid key".to_string())),
         }
@@ -43,7 +43,7 @@ impl TryFrom<RespArray> for Set {
         let mut args = extract_args(value, 1)?.into_iter();
         match (args.next(), args.next()) {
             (Some(RespFrame::BulkString(key)), Some(value)) => Ok(Set {
-                key: String::from_utf8(key.0)?,
+                key: String::from_utf8(key.0.expect("Invalid key"))?,
                 value,
             }),
             _ => Err(CommandError::InvalidArgument(

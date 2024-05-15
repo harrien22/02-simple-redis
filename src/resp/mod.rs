@@ -19,14 +19,8 @@ const CRLF: &[u8] = b"\r\n";
 const CRLF_LEN: usize = CRLF.len();
 
 pub use self::{
-    array::RespArray,
-    bulk_string::{BulkString, RespNullBulkString},
-    frame::RespFrame,
-    map::RespMap,
-    null::RespNull,
-    set::RespSet,
-    simple_error::SimpleError,
-    simple_string::SimpleString,
+    array::RespArray, bulk_string::BulkString, frame::RespFrame, map::RespMap, null::RespNull,
+    set::RespSet, simple_error::SimpleError, simple_string::SimpleString,
 };
 
 #[enum_dispatch]
@@ -124,6 +118,18 @@ fn check_null_array(buf: &[u8]) -> Result<bool, RespError> {
     }
 
     if !buf.starts_with(b"*-1\r\n") {
+        return Ok(false);
+    }
+
+    Ok(true)
+}
+
+fn check_null_bulkstring(buf: &[u8]) -> Result<bool, RespError> {
+    if buf.len() < 3 {
+        return Err(RespError::NotComplete);
+    }
+
+    if !buf.starts_with(b"$-1\r\n") {
         return Ok(false);
     }
 

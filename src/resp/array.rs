@@ -58,7 +58,7 @@ impl RespDecode for RespArray {
             frames.push(RespFrame::decode(buf)?);
         }
 
-        Ok(RespArray::new(frames))
+        Ok(RespArray::new(Some(frames)))
     }
 
     fn expect_length(buf: &[u8]) -> Result<usize, RespError> {
@@ -90,8 +90,8 @@ impl RespDecode for RespArray {
 // }
 
 impl RespArray {
-    pub fn new(s: impl Into<Option<Vec<RespFrame>>>) -> Self {
-        RespArray(s.into())
+    pub fn new(s: Option<impl Into<Vec<RespFrame>>>) -> Self {
+        RespArray(s.map(|v| v.into()))
     }
 }
 
@@ -111,11 +111,11 @@ mod tests {
 
     #[test]
     fn test_array_encode() {
-        let frame: RespFrame = RespArray::new(vec![
-            BulkString::new("set".to_string()).into(),
-            BulkString::new("hello".to_string()).into(),
-            BulkString::new("world".to_string()).into(),
-        ])
+        let frame: RespFrame = RespArray(Some(vec![
+            BulkString::new(Some(b"set")).into(),
+            BulkString::new(Some(b"hello")).into(),
+            BulkString::new(Some(b"world")).into(),
+        ]))
         .into();
         assert_eq!(
             &frame.encode(),
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_null_array_encode() {
-        let frame: RespFrame = RespArray::new(None).into();
+        let frame: RespFrame = RespArray(None).into();
         assert_eq!(frame.encode(), b"*-1\r\n");
     }
 
@@ -135,7 +135,7 @@ mod tests {
         buf.extend_from_slice(b"*-1\r\n");
 
         let frame = RespArray::decode(&mut buf)?;
-        assert_eq!(frame, RespArray::new(None));
+        assert_eq!(frame, RespArray(None));
 
         Ok(())
     }

@@ -72,7 +72,7 @@ mod tests {
     fn test_set_encode() {
         let frame: RespFrame = RespSet::new([
             RespArray::new(Some(vec![1234.into(), true.into()])).into(),
-            BulkString::new("world".to_string()).into(),
+            BulkString::new(Some("world".to_string())).into(),
         ])
         .into();
         assert_eq!(
@@ -90,8 +90,8 @@ mod tests {
         assert_eq!(
             frame,
             RespSet::new(vec![
-                BulkString::new(b"set".to_vec()).into(),
-                BulkString::new(b"hello".to_vec()).into(),
+                BulkString::new(Some(b"set".to_vec())).into(),
+                BulkString::new(Some(b"hello".to_vec())).into(),
             ])
         );
 

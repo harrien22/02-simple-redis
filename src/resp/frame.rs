@@ -1,6 +1,6 @@
 use crate::{
-    BulkString, RespArray, RespDecode, RespError, RespMap, RespNull, RespNullBulkString, RespSet,
-    SimpleError, SimpleString,
+    BulkString, RespArray, RespDecode, RespError, RespMap, RespNull, RespSet, SimpleError,
+    SimpleString,
 };
 use bytes::BytesMut;
 use enum_dispatch::enum_dispatch;
@@ -12,7 +12,7 @@ pub enum RespFrame {
     Error(SimpleError),
     Integer(i64),
     BulkString(BulkString),
-    NullBulkString(RespNullBulkString),
+    // NullBulkString(RespNullBulkString),
     Array(RespArray),
     // NullArray(RespArray),
     Null(RespNull),
@@ -41,14 +41,16 @@ impl RespDecode for RespFrame {
             }
             Some(b'$') => {
                 // try null bulk string first
-                match RespNullBulkString::decode(buf) {
-                    Ok(frame) => Ok(frame.into()),
-                    Err(RespError::NotComplete) => Err(RespError::NotComplete),
-                    Err(_) => {
-                        let frame = BulkString::decode(buf)?;
-                        Ok(frame.into())
-                    }
-                }
+                // match RespNullBulkString::decode(buf) {
+                //     Ok(frame) => Ok(frame.into()),
+                //     Err(RespError::NotComplete) => Err(RespError::NotComplete),
+                //     Err(_) => {
+                //         let frame = BulkString::decode(buf)?;
+                //         Ok(frame.into())
+                //     }
+                // }
+                let frame = BulkString::decode(buf)?;
+                Ok(frame.into())
             }
             Some(b'*') => {
                 // try null array first
@@ -117,13 +119,13 @@ impl From<&str> for RespFrame {
 
 impl From<&[u8]> for RespFrame {
     fn from(s: &[u8]) -> Self {
-        BulkString(s.to_vec()).into()
+        BulkString::new(Some(s.to_vec())).into()
     }
 }
 
 impl<const N: usize> From<&[u8; N]> for RespFrame {
     fn from(s: &[u8; N]) -> Self {
-        BulkString(s.to_vec()).into()
+        BulkString::new(Some(s.to_vec())).into()
     }
 }
 
