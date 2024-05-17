@@ -248,4 +248,36 @@ mod tests {
         assert_eq!(result, expected.into());
         Ok(())
     }
+
+    #[test]
+    fn test_hset_hmget_commands() -> Result<()> {
+        let backend = crate::Backend::new();
+        let cmd = HSet {
+            key: "hello".to_string(),
+            field: "field1".to_string(),
+            value: RespFrame::BulkString(b"world1".into()),
+        };
+        let result = cmd.execute(&backend);
+        assert_eq!(result, RESP_OK.clone());
+
+        let cmd = HSet {
+            key: "hello".to_string(),
+            field: "field2".to_string(),
+            value: RespFrame::BulkString(b"world2".into()),
+        };
+        cmd.execute(&backend);
+
+        let cmd = HMGet {
+            key: "hello".to_string(),
+            fields: vec!["field1".to_string(), "field2".to_string()],
+        };
+        let result = cmd.execute(&backend);
+
+        let expected = RespArray::new(Some(vec![
+            BulkString::from("world1").into(),
+            BulkString::from("world2").into(),
+        ]));
+        assert_eq!(result, expected.into());
+        Ok(())
+    }
 }
