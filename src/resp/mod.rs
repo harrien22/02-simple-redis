@@ -112,30 +112,6 @@ fn parse_length(buf: &[u8], prefix: &str) -> Result<(usize, usize), RespError> {
     Ok((end, s.parse()?))
 }
 
-fn check_null_array(buf: &[u8]) -> Result<bool, RespError> {
-    if buf.len() < 3 {
-        return Err(RespError::NotComplete);
-    }
-
-    if !buf.starts_with(b"*-1\r\n") {
-        return Ok(false);
-    }
-
-    Ok(true)
-}
-
-fn check_null_bulkstring(buf: &[u8]) -> Result<bool, RespError> {
-    if buf.len() < 3 {
-        return Err(RespError::NotComplete);
-    }
-
-    if !buf.starts_with(b"$-1\r\n") {
-        return Ok(false);
-    }
-
-    Ok(true)
-}
-
 fn calc_total_length(buf: &[u8], end: usize, len: usize, prefix: &str) -> Result<usize, RespError> {
     let mut total = end + CRLF_LEN;
     let mut data = &buf[total..];
