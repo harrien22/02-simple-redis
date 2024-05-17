@@ -37,6 +37,7 @@ pub enum Command {
     Set(Set),
     HGet(HGet),
     HSet(HSet),
+    HMGet(HMGet),
     HGetAll(HGetAll),
     Echo(Echo),
 
@@ -66,6 +67,12 @@ pub struct HSet {
     key: String,
     field: String,
     value: RespFrame,
+}
+
+#[derive(Debug)]
+pub struct HMGet {
+    key: String,
+    fields: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -104,6 +111,7 @@ impl TryFrom<RespArray> for Command {
                     b"set" => Ok(Set::try_from(v)?.into()),
                     b"hget" => Ok(HGet::try_from(v)?.into()),
                     b"hset" => Ok(HSet::try_from(v)?.into()),
+                    b"hmget" => Ok(HMGet::try_from(v)?.into()),
                     b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
                     b"echo" => Ok(Echo::try_from(v)?.into()),
                     _ => Ok(Unrecognized.into()),
@@ -141,7 +149,7 @@ impl CommandExecutor for Unrecognized {
 fn validate_command(
     value: &RespArray,
     names: &[&'static str],
-    n_args: usize,
+    n_args: Option<usize>,
 ) -> Result<(), CommandError> {
     if value.is_none() {
         return Err(CommandError::InvalidCommand(
@@ -150,12 +158,15 @@ fn validate_command(
     }
 
     let value = value.as_ref().unwrap();
-    if value.len() != n_args + names.len() {
-        return Err(CommandError::InvalidArgument(format!(
-            "{} command must have exactly {} argument",
-            names.join(" "),
-            n_args
-        )));
+
+    if let Some(n_args) = n_args {
+        if value.len() != n_args + names.len() {
+            return Err(CommandError::InvalidArgument(format!(
+                "{} command must have exactly {} argument",
+                names.join(" "),
+                n_args
+            )));
+        }
     }
 
     for (i, name) in names.iter().enumerate() {

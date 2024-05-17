@@ -14,7 +14,7 @@ impl CommandExecutor for Echo {
 impl TryFrom<RespArray> for Echo {
     type Error = CommandError;
     fn try_from(value: RespArray) -> Result<Self, Self::Error> {
-        validate_command(&value, &["echo"], 1)?;
+        validate_command(&value, &["echo"], Some(1))?;
 
         let mut args = extract_args(value, 1)?.into_iter();
         match args.next() {

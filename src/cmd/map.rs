@@ -23,7 +23,7 @@ impl CommandExecutor for Set {
 impl TryFrom<RespArray> for Get {
     type Error = CommandError;
     fn try_from(value: RespArray) -> Result<Self, Self::Error> {
-        validate_command(&value, &["get"], 1)?;
+        validate_command(&value, &["get"], Some(1))?;
 
         let mut args = extract_args(value, 1)?.into_iter();
         match args.next() {
@@ -38,7 +38,7 @@ impl TryFrom<RespArray> for Get {
 impl TryFrom<RespArray> for Set {
     type Error = CommandError;
     fn try_from(value: RespArray) -> Result<Self, Self::Error> {
-        validate_command(&value, &["set"], 2)?;
+        validate_command(&value, &["set"], Some(2))?;
 
         let mut args = extract_args(value, 1)?.into_iter();
         match (args.next(), args.next()) {
