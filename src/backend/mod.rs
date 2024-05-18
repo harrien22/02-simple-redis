@@ -1,5 +1,5 @@
 use crate::RespFrame;
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -10,6 +10,7 @@ pub struct Backend(Arc<BackendInner>);
 pub struct BackendInner {
     pub(crate) map: DashMap<String, RespFrame>,
     pub(crate) hmap: DashMap<String, DashMap<String, RespFrame>>,
+    pub(crate) set: DashMap<String, DashSet<String>>,
 }
 
 impl Deref for Backend {
@@ -31,6 +32,7 @@ impl Default for BackendInner {
         Self {
             map: DashMap::new(),
             hmap: DashMap::new(),
+            set: DashMap::new(),
         }
     }
 }
@@ -38,6 +40,26 @@ impl Default for BackendInner {
 impl Backend {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn sadd(&self, key: String, members: Vec<String>) -> i64 {
+        let mut count = 0;
+        let set = self.set.entry(key).or_default();
+
+        members.into_iter().for_each(|member| {
+            if set.insert(member) {
+                count += 1
+            }
+        });
+        count
+    }
+
+    pub fn sismember(&self, key: &str, member: &str) -> i64 {
+        if self.set.get(key).map_or(false, |set| set.contains(member)) {
+            1
+        } else {
+            0
+        }
     }
 
     pub fn get(&self, key: &str) -> Option<RespFrame> {
