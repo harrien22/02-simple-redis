@@ -1,4 +1,4 @@
-use super::{extract_args, validate_command, CommandExecutor, HGet, HGetAll, HMGet, HSet, RESP_OK};
+use super::{extract_args, validate_command, CommandExecutor, HGet, HGetAll, HMGet, HSet};
 use crate::{cmd::CommandError, BulkString, RespArray, RespFrame};
 
 impl CommandExecutor for HGet {
@@ -54,8 +54,7 @@ impl CommandExecutor for HGetAll {
 
 impl CommandExecutor for HSet {
     fn execute(self, backend: &crate::Backend) -> RespFrame {
-        backend.hset(self.key, self.field, self.value);
-        RESP_OK.clone()
+        RespFrame::Integer(backend.hset(self.key, self.field, self.value))
     }
 }
 
@@ -217,7 +216,7 @@ mod tests {
             value: RespFrame::BulkString(b"world".into()),
         };
         let result = cmd.execute(&backend);
-        assert_eq!(result, RESP_OK.clone());
+        assert_eq!(result, RespFrame::Integer(1));
 
         let cmd = HSet {
             key: "map".to_string(),
@@ -258,7 +257,7 @@ mod tests {
             value: RespFrame::BulkString(b"world1".into()),
         };
         let result = cmd.execute(&backend);
-        assert_eq!(result, RESP_OK.clone());
+        assert_eq!(result, RespFrame::Integer(1));
 
         let cmd = HSet {
             key: "hello".to_string(),

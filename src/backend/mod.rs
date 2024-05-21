@@ -94,9 +94,14 @@ impl Backend {
         resp
     }
 
-    pub fn hset(&self, key: String, field: String, value: RespFrame) {
+    pub fn hset(&self, key: String, field: String, value: RespFrame) -> i64 {
         let hmap = self.hmap.entry(key).or_default();
+        if hmap.get(&field).is_some() {
+            hmap.insert(field, value);
+            return 0;
+        }
         hmap.insert(field, value);
+        1
     }
 
     pub fn hgetall(&self, key: &str) -> Option<DashMap<String, RespFrame>> {

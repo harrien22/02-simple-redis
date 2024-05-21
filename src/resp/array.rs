@@ -3,6 +3,8 @@ use crate::{RespDecode, RespEncode, RespError, RespFrame};
 use bytes::{Buf, BytesMut};
 use std::ops::Deref;
 
+const NULL_ARRAY: &str = "*-1\r\n";
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct RespArray(pub(crate) Option<Vec<RespFrame>>);
 
@@ -21,7 +23,7 @@ impl RespEncode for RespArray {
                     buf.extend_from_slice(&frame.encode());
                 }
             }
-            None => buf.extend_from_slice(b"*-1\r\n"),
+            None => buf.extend_from_slice(NULL_ARRAY.as_bytes()),
         }
 
         buf
@@ -34,8 +36,8 @@ impl RespEncode for RespArray {
 impl RespDecode for RespArray {
     const PREFIX: &'static str = "*";
     fn decode(buf: &mut BytesMut) -> Result<Self, RespError> {
-        if buf.starts_with(b"*-1\r\n") {
-            extract_fixed_data(buf, "*-1\r\n", "RespArray")?;
+        if buf.starts_with(NULL_ARRAY.as_bytes()) {
+            extract_fixed_data(buf, NULL_ARRAY, "RespArray")?;
             return Ok(RespArray::new(None));
         }
 
@@ -58,7 +60,7 @@ impl RespDecode for RespArray {
     }
 
     fn expect_length(buf: &[u8]) -> Result<usize, RespError> {
-        if buf.starts_with(b"*-1\r\n") {
+        if buf.starts_with(NULL_ARRAY.as_bytes()) {
             return Ok(5);
         }
         let (end, len) = parse_length(buf, Self::PREFIX)?;
@@ -122,13 +124,13 @@ mod tests {
     #[test]
     fn test_null_array_encode() {
         let frame: RespFrame = RespArray::new(None).into();
-        assert_eq!(frame.encode(), b"*-1\r\n");
+        assert_eq!(frame.encode(), NULL_ARRAY.as_bytes());
     }
 
     #[test]
     fn test_null_array_decode() -> Result<()> {
         let mut buf = BytesMut::new();
-        buf.extend_from_slice(b"*-1\r\n");
+        buf.extend_from_slice(NULL_ARRAY.as_bytes());
 
         let frame = RespArray::decode(&mut buf)?;
         assert_eq!(frame, RespArray::new(None));
